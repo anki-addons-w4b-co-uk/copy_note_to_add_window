@@ -1,0 +1,49 @@
+<b>TLDR</b>
+- You should adjust the shortcut before you can use the add-on.
+- Read the section about Limitations below.
+
+
+<b>Functions</b>
+This add-on allows you to copy the contents of the note of the current card to a new Add window when you press a shortcut. You can use this shortcut
+- in the Add Window,
+- in the window "Edit Current" (which you see if you press "e" during review),
+- in the Browser.
+In the Browser you can also use an entry in the menu or in Anki 2.1 when you are in the upper half over the table you can use the context menu.
+
+You can adjust the default shortcut. In 2.1 use the add-on configuration window for this. If you use Anki 2.0 there is a file config.json in the folder of this add-on that you need to change.
+
+
+<b>Motivation</b>
+This add-on was created in response to this <a href="https://www.reddit.com/r/Anki/comments/b6gso2/copy_all_fields_of_existing_note_into_fields_of/" rel="nofollow">reddit thread</a>.
+
+I regularly notice that some of my cards are too long even though I try to follow the <a href="https://www.supermemo.com/en/articles/20rules" rel="nofollow">Twenty rules of formulating knowledge</a>. Then I want to split up the note. But if my note contains tags and fields like source, page, etc. this is tedious. Hopefully this add-on helps. 
+
+I often notice that during review. I could press "e" to open up the underlying note in an Add-like window and then use the shortcut to copy the contents of this window. To make things faster I added a shortcut just for the reviewer that open both windows. This only works in 2.1.
+
+
+<b>Alternatives</b>
+You might not need this add-on: You can open notes from the browser in a full window view with add-ons like <a href="https://ankiweb.net/shared/info/1996266159" rel="nofollow">External Note Editor for the Browser</a> (in 2019-03 only for the old version 2.0) or my <a href="https://ankiweb.net/shared/info/1819291495" rel="nofollow">Browser Maximize/Hide Table/Editor</a>. With these you wont' be able to switch the note type and won't have an Add button. 
+
+
+<b>Known Limitations</b>
+There are some limitations that don't bother me. 
+- If you run the shortcut from an editor in Anki 2.1 very recent edits of the field where your cursor is located are not copied. You can circumvent this if you press "Tab" to put the cursor into the next field which saves the current field. Only then trigger the shortcut of this Add-on. At some point I will look into this. 
+- shortcut_side_by_side_from_reviewer works only in 2.1
+- if you have many Add windows open using this add-on to might change the deck name that is set in the deck choser in other windows. 
+If you can't live with these limitations don't use this add-on. If you have a fix for (one of) these please share it with me at <a href="https://github.com/ijgnd/anki__copy_current_note_contents_to_add_window" rel="nofollow">github</a>.
+
+
+<b>Requirements</b>
+This add-on requires add-ons that allow multiple add windows:
+- for 2.1 it's <a href="https://ankiweb.net/shared/info/354407385" rel="nofollow">Opening the same window multiple time</a>
+- for 2.0 it's <a href="https://ankiweb.net/shared/info/969743069" rel="nofollow">Multiple 'Add' and 'Browser' Windows</a>  
+In 2.1 you should also use <a href="https://ankiweb.net/shared/info/424778276" rel="nofollow">Keep model of add cards</a>.
+
+
+<b>Bugs, Problems</b>
+Bug fixes, improvements or feedback is welcome at my <a href="https://github.com/ijgnd/anki__copy_current_note_contents_to_add_window" rel="nofollow">github repo</a>. If you run into problems you can also notify me over there. If you leave a report as a review on this site I can't really answer well. 
+  
+
+<b>Other Authors</b>: 
+(c) 2018 Glutanimate
+(c) Ankitects Pty Ltd and contributors
