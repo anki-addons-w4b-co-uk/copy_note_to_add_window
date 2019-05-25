@@ -1,4 +1,8 @@
 {
     "shortcut":"ctrl+0",
-    "shortcut_side_by_side_from_reviewer":"ctrl+9"
+    "shortcut_side_by_side_from_reviewer":"ctrl+9",
+    "shortcut_copy_note_thats_shown_in_the_reviewer":"ctrl+8",
+    "NoteIdFieldName": "Note ID",
+    "context_menu__entry_for_copy_current_note__reviewer": true,
+    "context_menu__entry_for_copy_current_note__editor": true
 }  

@@ -11,6 +11,7 @@ from __future__ import unicode_literals
 Copyright: (c) 2019 ijgnd
            (c) 2018 Glutanimate
            (c) Ankitects Pty Ltd and contributors
+           (c) 2012–2017 Roland Sieker
 
 License: GNU AGPLv3 <https://www.gnu.org/licenses/agpl.html>
 """
@@ -47,7 +48,7 @@ def open_in_add_window(note, did):
     cdeck['mid'] = m['id']
     mw.col.decks.save(cdeck)
     runHook("currentModelChanged")  
-    mw.reset()
+    #mw.reset()
     
     if anki20:
         addedCardWindow.deckChooser.deck.setText(deckname)
@@ -58,6 +59,10 @@ def open_in_add_window(note, did):
     newnote = mw.col.newNote()
 
     newnote.fields = note.fields
+    if local_conf.get("NoteIdFieldName",False):
+        for f in newnote.keys():
+            if f == local_conf["NoteIdFieldName"]:
+                newnote[f] = str(newnote.id)
     newnote.tags = note.tags
 
     addedCardWindow.editor.setNote(newnote)
@@ -130,7 +135,7 @@ else:
 
 ########################### 
 
-def side_by_side():
+def copy_currently_shown_note_from_reviewer():
     card = aqt.mw.reviewer.card
     if card.odid:
         did = card.odid
@@ -138,6 +143,10 @@ def side_by_side():
         did = card.did
     note = aqt.mw.col.getNote(card.nid)
     open_in_add_window(note,did)
+
+
+def side_by_side():
+    copy_currently_shown_note_from_reviewer()
     aqt.mw.onEditCurrent()
 
 
@@ -145,13 +154,33 @@ def addShortcuts20(self, evt):
     k = unicode(evt.text())
     if k == local_conf["shortcut_side_by_side_from_reviewer"]:
         side_by_side()
+    if k == local_conf["shortcut_copy_note_thats_shown_in_the_reviewer"]:
+        copy_currently_shown_note_from_reviewer()
+
+def EditorContextMenu(view,menu):
+    a = menu.addAction('copy contents underlying note to add window')
+    a.triggered.connect(lambda _,v=view.editor: on_open_in_add_window(v))
+def ReviewerContextMenu(view,menu):
+    a = menu.addAction('copy contents underlying note to add window')
+    a.triggered.connect(lambda v=view: copy_currently_shown_note_from_reviewer())
+def show_in_contextmenu_of_reviewer():
+    """user config only available when profile is loaded"""
+    if local_conf.get('context_menu__entry_for_copy_current_note__reviewer',False):
+        addHook("AnkiWebView.contextMenuEvent", ReviewerContextMenu)
+    if local_conf.get('context_menu__entry_for_copy_current_note__editor',False):
+        addHook("EditorWebView.contextMenuEvent", EditorContextMenu)
+
 if anki20:
     Reviewer._keyHandler = wrap(Reviewer._keyHandler, addShortcuts20)
+addHook('profileLoaded', show_in_contextmenu_of_reviewer)
+
+
 
 
 def reviewer_shortcuts_21(shortcuts):
     additions = (
         (local_conf["shortcut_side_by_side_from_reviewer"], side_by_side),
+        (local_conf["shortcut_copy_note_thats_shown_in_the_reviewer"], copy_currently_shown_note_from_reviewer),
     )
     shortcuts += additions
 if not anki20:
@@ -161,7 +190,7 @@ if not anki20:
 
 ###########################
 #allow to clone from the browser table (when you are not in the editor)
-def on_open_in_add_window(browser):
+def browser_on_open_in_add_window(browser):
     sel = browser.selectedCards()
     if len(sel) > 1:
         tooltip("two many cards selected. aborting")
@@ -185,8 +214,9 @@ def setupMenu(browser):
     global myaction
     myaction = QAction(browser)
     myaction.setText("Copy current note contents to add window")
-    myaction.setShortcut(QKeySequence(local_conf.get("shortcut","")))
-    myaction.triggered.connect(lambda : on_open_in_add_window(browser))
+    if local_conf.get("shortcut",False):
+        myaction.setShortcut(QKeySequence(local_conf["shortcut"]))
+    myaction.triggered.connect(lambda : browser_on_open_in_add_window(browser))
     browser.form.menuEdit.addAction(myaction)
 addHook("browser.setupMenus", setupMenu)
 
