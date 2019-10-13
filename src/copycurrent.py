@@ -1,12 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
-
-###############USER CONFIG#######################################
-#config for 2.1 is set via the config dialog of 2.1
-#config for 2.0 is set in the file config.json
-####################END USER CONFIG##############################
-
 """
 Copyright: (c) 2019 ijgnd
            (c) 2018 Glutanimate
@@ -27,16 +18,17 @@ from aqt.reviewer import Reviewer
 from aqt.addcards import AddCards
 from aqt.utils import tooltip
 
-from .config import local_conf
-from .consts import anki20
+
+def gc(arg, fail=False):
+    return mw.addonManager.getConfig(__name__).get(arg, fail)
 
 
 def open_in_add_window(note, did):
-    #Anki built in: see main.py
+    # Anki built in: see main.py
     #    def onAddCard(self):
     #        aqt.dialogs.open("AddCards", self)
     # self is an instance of AnkiQt and in it's init this is set:  aqt.mw = self
-    addedCardWindow = aqt.dialogs.open('AddCards', aqt.mw) 
+    addedCardWindow = aqt.dialogs.open('AddCards', aqt.mw)
     deck = mw.col.decks.get(did)
     deckname = deck['name']
     modelname = note.model()['name']
@@ -47,21 +39,15 @@ def open_in_add_window(note, did):
     cdeck = mw.col.decks.current()
     cdeck['mid'] = m['id']
     mw.col.decks.save(cdeck)
-    runHook("currentModelChanged")  
-    #mw.reset()
-    
-    if anki20:
-        addedCardWindow.deckChooser.deck.setText(deckname)
-    else:
-        addedCardWindow.deckChooser.setDeckName(deckname)      
-    
+    runHook("currentModelChanged")
+
+    addedCardWindow.deckChooser.setDeckName(deckname)
     addedCardWindow.modelChooser.models.setText(modelname)
     newnote = mw.col.newNote()
-
     newnote.fields = note.fields
-    if local_conf.get("NoteIdFieldName",False):
+    if gc("NoteIdFieldName", False):
         for f in newnote.keys():
-            if f == local_conf["NoteIdFieldName"]:
+            if f == gc("NoteIdFieldName"):
                 newnote[f] = str(newnote.id)
     newnote.tags = note.tags
     addedCardWindow.editor.tags.setText("")
@@ -69,128 +55,89 @@ def open_in_add_window(note, did):
     addedCardWindow.activateWindow()
 
 
-#This does not work: output to stdout is "ignored late blur"
-def mysave21(editor):
-    "Save unsaved edits - mod of editor.saveNow without callback"
-    if not editor.note:
-            # calling code may not expect the callback to fire immediately
-        editor.mw.progress.timer(10, callback, False)
-        return
-    editor.saveTags()
-    editor.web.eval("saveNow(true)")
-    
-
-def on_open_in_add_window(editor):   
-    #must save current field
-    if anki20:
-        editor.saveNow()
-    else:
-        mysave21(editor)
-    
-    #did
+def _on_open_in_add_window(editor):
+    # did
     if isinstance(editor.parentWindow, AddCards):
         did = editor.parentWindow.deckChooser.selectedId()
-    elif isinstance(editor.parentWindow, EditCurrent) and anki20:
-        #Editcurrent.__init__ in anki.20 doesn't have this line: "self.editor.card = self.mw.reviewer.card"
-        if editor.mw.reviewer.card.odid:
-            did = editor.mw.reviewer.card.odid
-        else:
-            did = editor.mw.reviewer.card.did
     else:
         if editor.card.odid:
             did = editor.card.odid
         else:
             did = editor.card.did
+    open_in_add_window(editor.note, did)
+Editor._on_open_in_add_window = _on_open_in_add_window
 
-    open_in_add_window(editor.note,did)
+
+def on_open_in_add_window(editor):
+    editor.saveNow(editor._on_open_in_add_window)
 Editor.on_open_in_add_window = on_open_in_add_window
 
 
-
-#only in AddCards and EditCurrent and not in the Browser because it's defined 
-#for the Browser elsewhere
-#For AddCards and EditCurrent I still want to use the Editor hook because 
-#there are not comparable ones for AddCards or EditCurrent
-def onSetupButtons20(editor):
-    if isinstance(editor.parentWindow, (AddCards,EditCurrent)):
-        shortcut = local_conf['shortcut']
-        t = QShortcut(QKeySequence(shortcut), editor.parentWindow)
-        t.activated.connect(lambda: editor.on_open_in_add_window())
-
-
+# only in AddCards and EditCurrent and not in the Browser because it's defined
+# for the Browser elsewhere
+# For AddCards and EditCurrent I still want to use the Editor hook because
+# there are not comparable ones for AddCards or EditCurrent
 def onSetupShortcuts21(cuts, editor):
-    if isinstance(editor.parentWindow, (AddCards,EditCurrent)):
-        shortcut = local_conf['shortcut']
+    if isinstance(editor.parentWindow, (AddCards, EditCurrent)):
+        shortcut = gc('shortcut')
         added_shortcuts = [
             (shortcut,
                 lambda: editor.on_open_in_add_window()),
         ]
         cuts.extend(added_shortcuts)
+addHook("setupEditorShortcuts", onSetupShortcuts21)
+
+###########################
 
 
-if anki20:
-    addHook("setupEditorButtons", onSetupButtons20)
-else:
-    addHook("setupEditorShortcuts", onSetupShortcuts21)
-
-########################### 
-
-def copy_currently_shown_note_from_reviewer():
+def copy_from_reviewer():
     card = aqt.mw.reviewer.card
     if card.odid:
         did = card.odid
     else:
         did = card.did
     note = aqt.mw.col.getNote(card.nid)
-    open_in_add_window(note,did)
+    open_in_add_window(note, did)
 
 
 def side_by_side():
-    copy_currently_shown_note_from_reviewer()
+    copy_from_reviewer()
     aqt.mw.onEditCurrent()
 
 
-def addShortcuts20(self, evt):
-    k = unicode(evt.text())
-    if k == local_conf["shortcut_side_by_side_from_reviewer"]:
-        side_by_side()
-    if k == local_conf["shortcut_copy_note_thats_shown_in_the_reviewer"]:
-        copy_currently_shown_note_from_reviewer()
+def EditorContextMenu(view, menu):
+    a = menu.addAction('copy contents underlying note to add window')
+    a.triggered.connect(lambda _, v=view.editor: on_open_in_add_window(v))
 
-def EditorContextMenu(view,menu):
+
+def ReviewerContextMenu(view, menu):
     a = menu.addAction('copy contents underlying note to add window')
-    a.triggered.connect(lambda _,v=view.editor: on_open_in_add_window(v))
-def ReviewerContextMenu(view,menu):
-    a = menu.addAction('copy contents underlying note to add window')
-    a.triggered.connect(lambda v=view: copy_currently_shown_note_from_reviewer())
+    a.triggered.connect(lambda v=view: copy_from_reviewer())
+
+
 def show_in_contextmenu_of_reviewer():
     """user config only available when profile is loaded"""
-    if local_conf.get('context_menu__entry_for_copy_current_note__reviewer',False):
+    if gc('context_menu__entry_for_copy_current_note__reviewer', False):
         addHook("AnkiWebView.contextMenuEvent", ReviewerContextMenu)
-    if local_conf.get('context_menu__entry_for_copy_current_note__editor',False):
+    if gc('context_menu__entry_for_copy_current_note__editor', False):
         addHook("EditorWebView.contextMenuEvent", EditorContextMenu)
 
-if anki20:
-    Reviewer._keyHandler = wrap(Reviewer._keyHandler, addShortcuts20)
 addHook('profileLoaded', show_in_contextmenu_of_reviewer)
-
-
 
 
 def reviewer_shortcuts_21(shortcuts):
     additions = (
-        (local_conf["shortcut_side_by_side_from_reviewer"], side_by_side),
-        (local_conf["shortcut_copy_note_thats_shown_in_the_reviewer"], copy_currently_shown_note_from_reviewer),
+        (gc("shortcut_side_by_side_from_reviewer"), side_by_side),
+        (gc("shortcut_copy_note_thats_shown_in_the_reviewer"), copy_from_reviewer),
     )
     shortcuts += additions
-if not anki20:
-    addHook("reviewStateShortcuts", reviewer_shortcuts_21)
-
+addHook("reviewStateShortcuts", reviewer_shortcuts_21)
 
 
 ###########################
-#allow to clone from the browser table (when you are not in the editor)
-def browser_on_open_in_add_window(browser):
+
+# allow to clone from the browser table (when you are not in the editor)
+def _browser_on_open_in_add_window(browser):
     sel = browser.selectedCards()
     if len(sel) > 1:
         tooltip("two many cards selected. aborting")
@@ -202,28 +149,26 @@ def browser_on_open_in_add_window(browser):
             did = card.odid
         else:
             did = card.did
-        #must save current field
-        if anki20:
-            browser.editor.saveNow()
-        else:
-            mysave21(browser.editor)
-        open_in_add_window(note,card.did)
+        # must save current field
+        open_in_add_window(note, did)
+
+
+# allow to clone from the browser table (when you are not in the editor)
+def browser_on_open_in_add_window(browser):
+    browser.editor.saveNow(lambda b=browser: _browser_on_open_in_add_window(b))
 
 
 def setupMenu(browser):
     global myaction
     myaction = QAction(browser)
     myaction.setText("Copy current note contents to add window")
-    if local_conf.get("shortcut",False):
-        myaction.setShortcut(QKeySequence(local_conf["shortcut"]))
-    myaction.triggered.connect(lambda : browser_on_open_in_add_window(browser))
+    if gc("shortcut", False):
+        myaction.setShortcut(QKeySequence(gc("shortcut")))
+    myaction.triggered.connect(lambda: browser_on_open_in_add_window(browser))
     browser.form.menuEdit.addAction(myaction)
 addHook("browser.setupMenus", setupMenu)
 
 
 def add_to_table_context_menu(browser, menu):
     menu.addAction(myaction)
-
-
-if not anki20:
-    addHook("browser.onContextMenu", add_to_table_context_menu)
+addHook("browser.onContextMenu", add_to_table_context_menu)
