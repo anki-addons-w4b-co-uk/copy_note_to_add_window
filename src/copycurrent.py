@@ -65,11 +65,15 @@ def _on_open_in_add_window(editor):
         else:
             did = editor.card.did
     open_in_add_window(editor.note, did)
+
+
 Editor._on_open_in_add_window = _on_open_in_add_window
 
 
 def on_open_in_add_window(editor):
     editor.saveNow(editor._on_open_in_add_window)
+
+
 Editor.on_open_in_add_window = on_open_in_add_window
 
 
@@ -85,6 +89,8 @@ def onSetupShortcuts21(cuts, editor):
                 lambda: editor.on_open_in_add_window()),
         ]
         cuts.extend(added_shortcuts)
+
+
 addHook("setupEditorShortcuts", onSetupShortcuts21)
 
 ###########################
@@ -122,6 +128,7 @@ def show_in_contextmenu_of_reviewer():
     if gc('context_menu__entry_for_copy_current_note__editor', False):
         addHook("EditorWebView.contextMenuEvent", EditorContextMenu)
 
+
 addHook('profileLoaded', show_in_contextmenu_of_reviewer)
 
 
@@ -131,6 +138,8 @@ def reviewer_shortcuts_21(shortcuts):
         (gc("shortcut_copy_note_thats_shown_in_the_reviewer"), copy_from_reviewer),
     )
     shortcuts += additions
+
+
 addHook("reviewStateShortcuts", reviewer_shortcuts_21)
 
 
@@ -140,7 +149,7 @@ addHook("reviewStateShortcuts", reviewer_shortcuts_21)
 def _browser_on_open_in_add_window(browser):
     sel = browser.selectedCards()
     if len(sel) > 1:
-        tooltip("two many cards selected. aborting")
+        tooltip("too many cards selected. aborting")
     else:
         cid = sel[0]
         card = aqt.mw.col.getCard(cid)
@@ -161,14 +170,18 @@ def browser_on_open_in_add_window(browser):
 def setupMenu(browser):
     global myaction
     myaction = QAction(browser)
-    myaction.setText("Copy current note contents to add window")
+    myaction.setText("Copy Note to New Add Window")
     if gc("shortcut", False):
         myaction.setShortcut(QKeySequence(gc("shortcut")))
     myaction.triggered.connect(lambda: browser_on_open_in_add_window(browser))
     browser.form.menuEdit.addAction(myaction)
+
+
 addHook("browser.setupMenus", setupMenu)
 
 
 def add_to_table_context_menu(browser, menu):
     menu.addAction(myaction)
+
+
 addHook("browser.onContextMenu", add_to_table_context_menu)
