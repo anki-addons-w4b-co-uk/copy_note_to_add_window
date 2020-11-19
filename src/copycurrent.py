@@ -168,7 +168,6 @@ def browser_on_open_in_add_window(browser):
 
 
 def setupMenu(browser):
-    global myaction
     myaction = QAction(browser)
     myaction.setText("Copy Note to New Add Window")
     if gc("shortcut", False):
@@ -181,6 +180,11 @@ addHook("browser.setupMenus", setupMenu)
 
 
 def add_to_table_context_menu(browser, menu):
+    myaction = QAction(browser)
+    myaction.setText("Copy Note to New Add Window")
+    if gc("shortcut", False):
+        myaction.setShortcut(QKeySequence(gc("shortcut")))
+    myaction.triggered.connect(lambda: browser_on_open_in_add_window(browser))
     menu.addAction(myaction)
 
 
