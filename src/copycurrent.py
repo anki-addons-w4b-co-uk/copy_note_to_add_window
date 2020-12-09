@@ -52,7 +52,7 @@ def open_in_add_window(note, did, include_fields):
                 newnote[f] = str(newnote.id)
     newnote.tags = note.tags
     addedCardWindow.editor.tags.setText("")
-    addedCardWindow.editor.setNote(newnote)
+    addedCardWindow.setAndFocusNote(newnote)
     addedCardWindow.activateWindow()
 
 
