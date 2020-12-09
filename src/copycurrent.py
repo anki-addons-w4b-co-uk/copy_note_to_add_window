@@ -23,7 +23,7 @@ def gc(arg, fail=False):
     return mw.addonManager.getConfig(__name__).get(arg, fail)
 
 
-def open_in_add_window(note, did):
+def open_in_add_window(note, did, include_fields):
     # Anki built in: see main.py
     #    def onAddCard(self):
     #        aqt.dialogs.open("AddCards", self)
@@ -44,7 +44,8 @@ def open_in_add_window(note, did):
     addedCardWindow.deckChooser.setDeckName(deckname)
     addedCardWindow.modelChooser.models.setText(modelname)
     newnote = mw.col.newNote()
-    newnote.fields = note.fields
+    if include_fields:
+        newnote.fields = note.fields
     if gc("NoteIdFieldName", False):
         for f in newnote.keys():
             if f == gc("NoteIdFieldName"):
@@ -146,7 +147,7 @@ addHook("reviewStateShortcuts", reviewer_shortcuts_21)
 ###########################
 
 # allow to clone from the browser table (when you are not in the editor)
-def _browser_on_open_in_add_window(browser):
+def _browser_on_open_in_add_window(browser, include_fields):
     sel = browser.selectedCards()
     if len(sel) > 1:
         tooltip("too many cards selected. aborting")
@@ -159,21 +160,25 @@ def _browser_on_open_in_add_window(browser):
         else:
             did = card.did
         # must save current field
-        open_in_add_window(note, did)
+        open_in_add_window(note, did, include_fields)
 
 
 # allow to clone from the browser table (when you are not in the editor)
-def browser_on_open_in_add_window(browser):
-    browser.editor.saveNow(lambda b=browser: _browser_on_open_in_add_window(b))
+def browser_on_open_in_add_window(browser, include_fields=True):
+    browser.editor.saveNow(lambda b=browser: _browser_on_open_in_add_window(b, include_fields))
 
 
 def setupMenu(browser):
     myaction = QAction(browser)
-    myaction.setText("Copy Note to New Add Window")
+    myaction.setText("New note from this one")
     if gc("shortcut", False):
         myaction.setShortcut(QKeySequence(gc("shortcut")))
     myaction.triggered.connect(lambda: browser_on_open_in_add_window(browser))
     browser.form.menuEdit.addAction(myaction)
+    my_action = QAction(browser)
+    my_action.setText("New note from this one (no fields)")
+    my_action.triggered.connect(lambda: browser_on_open_in_add_window(browser, False))
+    browser.form.menuEdit.addAction(my_action)
 
 
 addHook("browser.setupMenus", setupMenu)
@@ -181,11 +186,15 @@ addHook("browser.setupMenus", setupMenu)
 
 def add_to_table_context_menu(browser, menu):
     myaction = QAction(browser)
-    myaction.setText("Copy Note to New Add Window")
+    myaction.setText("New note from this one")
     if gc("shortcut", False):
         myaction.setShortcut(QKeySequence(gc("shortcut")))
     myaction.triggered.connect(lambda: browser_on_open_in_add_window(browser))
     menu.addAction(myaction)
+    my_action = QAction(browser)
+    my_action.setText("New note from this one (no fields)")
+    my_action.triggered.connect(lambda: browser_on_open_in_add_window(browser, False))
+    menu.addAction(my_action)
 
 
 addHook("browser.onContextMenu", add_to_table_context_menu)
